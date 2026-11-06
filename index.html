@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reich's Crispy</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: #f0ede5;
+      color: #1a1a18;
+      font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+      padding: 20px;
+      line-height: 1.5;
+    }
+    .container { max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
+    .card {
+      background: #f7f5f1;
+      border: 1px solid #d6d3cb;
+      border-radius: 12px;
+      padding: 16px 20px;
+      box-shadow: 0 10px 25px rgba(26,26,24,0.10);
+    }
+    h1 { font-size: 1.3rem; color: #fff; font-weight: 700; }
+    h2 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: #1a1a18; margin-bottom: 12px; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+    
+    .btn {
+      background: #d6d3cb; color: #c5c3be; border: 1px solid #b3b0a9; padding: 8px 14px;
+      border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.15s ease;
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .btn:hover { background: #b3b0a9; color: #fff; }
+    .btn-primary { background: #c02820; color: #f7f5f1; border-color: #c02820; font-weight: 700; }
+    .btn-primary:hover { background: #c02820; }
+    .btn-success { background: #c02820; color: #fff; border-color: #c02820; }
+    .btn-success:hover { background: #c02820; }
+    .btn-stop { background: #d6d3cb; color: #c02820; border-color: #b3b0a9; }
+    .btn-stop:hover { background: #c02820; color: #fff; }
+    .btn-active { background: #c02820 !important; color: #000 !important; font-weight: bold; }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .flex-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media(max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
+
+    .control-cluster { display: flex; flex-direction: column; align-items: center; gap: 18px; padding: 8px 0 4px; }
+.concentric { position: relative; display: flex; align-items: center; justify-content: center; min-height: 300px; padding: 8px 0 12px; }
+    .orbit { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+    .orbit-center { position: relative; z-index: 2; }
+    .orbit-left { position: absolute; top: 8px; left: 24px; z-index: 3; }
+    .orbit-right { position: absolute; top: 8px; right: 24px; z-index: 3; }
+    .round-lg { position: relative; }
+    .round-lg::before { content: ''; position: absolute; inset: 14px; border-radius: 999px; border: 2px solid rgba(15,23,42,0.4); pointer-events: none; }
+    .round-lg::after { content: ''; position: absolute; inset: 34px; border-radius: 999px; border: 2px solid rgba(15,23,42,0.28); pointer-events: none; }
+    .main-row { display: flex; align-items: flex-start; gap: 24px; flex-wrap: wrap; }
+    .main-left { flex: 0 0 auto; }
+    .main-right { flex: 1 1 320px; min-width: 300px; }
+    .control-row { display: flex; align-items: flex-end; justify-content: center; gap: 64px; flex-wrap: wrap; }
+    .round-group { display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 96px; }
+    .round-btn {
+      border-radius: 999px; border: 1px solid #d6d3cb; background: #c5c3be; color: #1a1a18;
+      display: inline-flex; align-items: center; justify-content: center; text-align: center;
+      cursor: pointer; font: 600 0.72rem/1.1 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      transition: transform 0.12s ease, background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+      user-select: none; -webkit-tap-highlight-color: transparent;
+    }
+    .round-btn:hover:not(:disabled) { background: #b3b0a9; border-color: #7a7a77; }
+    .round-btn:active:not(:disabled) { transform: scale(0.97); }
+    .round-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+    .round-sm { width: 84px; height: 84px; }
+    .round-lg { width: 252px; height: 252px; font-size: 1rem; font-weight: 700; background: #c02820; color: #f7f5f1; border-color: #c02820; box-shadow: 0 0 0 1px rgba(192,40,32,0.15), 0 18px 40px rgba(192,40,32,0.18); }
+    .round-lg:hover:not(:disabled) { background: #c02820; border-color: #c02820; }
+    .round-label { font-size: 0.68rem; color: #1a1a18; text-align: center; max-width: 180px; word-break: break-word; }
+    .sample-hold-wrap { position: relative; display: inline-block; }
+    .round-save { position: absolute; bottom: -10px; right: -10px; width: 72px; height: 72px; font-size: 0.62rem; background: #d6d3cb; color: #c02820; border-color: rgba(192,40,32,0.4); box-shadow: 0 8px 18px rgba(0,0,0,0.35); }
+    .scrub-row { margin-top: 14px; display: grid; gap: 8px; }
+    .hold-row { display: flex; align-items: center; gap: 10px; font-size: 0.72rem; color: #1a1a18; }
+    .hold-row input { flex: 1; max-width: 320px; }
+    
+    /* TR-808 style matrix */
+    .matrix-wrap { overflow-x: auto; padding: 4px 0 2px; }
+    .matrix {
+      display: grid;
+      grid-template-columns: repeat(16, minmax(34px, 1fr));
+      gap: 6px;
+      min-width: 720px;
+    }
+    .pad {
+      position: relative;
+      height: 44px;
+      border-radius: 7px;
+      border: 1px solid #d6d3cb;
+      background: linear-gradient(180deg, #232b3a 0%, #171d28 100%);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), inset 0 -8px 14px rgba(0,0,0,0.22);
+      cursor: pointer;
+      transition: border-color 0.08s ease, background 0.08s ease, transform 0.08s ease;
+    }
+    .pad:hover { border-color: #44536f; }
+    .pad.trigger { background: linear-gradient(180deg, #2a3347 0%, #1c2432 100%); }
+    .pad.bar-active { border-color: rgba(245, 158, 11, 0.28); }
+    .pad .led {
+      position: absolute;
+      left: 50%;
+      bottom: 5px;
+      width: 8px;
+      height: 8px;
+      margin-left: -4px;
+      border-radius: 999px;
+      background: #8e2019;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,0.45);
+      transition: background 0.05s ease, box-shadow 0.05s ease, transform 0.05s ease;
+    }
+    .pad.trigger .led { background: #a6211a; }
+    .pad.active .led {
+      background: #c02820;
+      box-shadow: 0 0 0 1px rgba(192,40,32,0.25), 0 0 8px rgba(192,40,32,0.95), 0 0 18px rgba(192,40,32,0.35);
+      transform: scale(1.05);
+    }
+    .pad.active { border-color: rgba(192,40,32,0.55); }
+    input[type=range] { width: 100%; accent-color: #2e2e2c; cursor: pointer; }
+    .wave-canvas {
+      display: block; width: 100%; height: 84px; background: #fff;
+      border: 1px solid #d6d3cb; border-radius: 8px; cursor: pointer; touch-action: none;
+    }
+    .wave-canvas.disabled { cursor: default; }
+    .stop-btn {
+      margin-top: 8px; padding: 9px 22px; border-radius: 999px; cursor: pointer;
+      background: #f7f5f1; color: #c02820; border: 1.5px solid #c02820;
+      font: 700 0.8rem/1 "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+      transition: background 0.15s ease, color 0.15s ease;
+    }
+    .stop-btn:hover:not(:disabled) { background: #c02820; color: #f7f5f1; }
+    .stop-btn:focus-visible { outline: 2px solid #1a1a18; outline-offset: 2px; }
+    .stop-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    #mainSvg .cell { fill: #fff; stroke: #d6d3cb; stroke-width: 0.5; cursor: pointer; }
+    #mainSvg .cell.played { fill: #c02820; stroke: #c02820; }
+    #mainSvg .cell.active { fill: #7a1610; stroke: #7a1610; }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none; appearance: none; width: 15px; height: 15px; border-radius: 50%;
+      background: #c02820; border: none; cursor: pointer;
+    }
+    input[type="range"]::-moz-range-thumb {
+      width: 15px; height: 15px; border-radius: 50%; background: #c02820; border: none; cursor: pointer;
+    }
+    .font-mono { font-variant-numeric: tabular-nums; letter-spacing: 0.01em; }
+</style>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+<div class="container">
+  <!-- Combined concentric interface + matrix + save audio -->
+  <div class="card" style="display:flex; flex-direction:column; align-items:center;">
+    <input type="file" id="fileInput" accept="audio/*" onchange="handleAudioUpload(event)" style="display:none;">
+    <svg id="mainSvg" viewBox="-12 -12 1024 1024" width="1000" height="1000" style="max-width:100%; height:auto;">
+      <defs>
+        <path id="arcChoose" d="M 355,500 A 145,145 0 0 1 645,500" />
+        <path id="arcPreview" d="M 400,500 A 100,100 0 0 1 600,500" />
+        <path id="arcSample" d="M 438,500 A 62,62 0 0 1 562,500" />
+        <path id="arcSave" d="M 35,500 A 465,465 0 0 1 965,500" />
+        <path id="arcTitle" d="M 13,414 A 495,495 0 0 1 253,71" />
+      </defs>
+
+      <!-- Choose Audio ring -->
+      <circle id="ringOuter" cx="500" cy="500" r="145" fill="none" stroke="#b3b0a9" stroke-width="30" onclick="document.getElementById('fileInput').click()" style="cursor:pointer;" />
+      <text id="roLabel" fill="#1a1a18" font-size="13" font-weight="700" style="pointer-events:none; text-transform:uppercase;">
+        <textPath href="#arcChoose" startOffset="50%" text-anchor="middle" dy="4.5">Choose Audio</textPath>
+      </text>
+
+      <!-- Preview ring -->
+      <circle id="ringMid" cx="500" cy="500" r="100" fill="none" stroke="#b3b0a9" stroke-width="26" onclick="togglePreview()" style="cursor:pointer;" />
+      <text id="rpLabel" fill="#1a1a18" font-size="13" font-weight="700" style="pointer-events:none; text-transform:uppercase;">
+        <textPath href="#arcPreview" startOffset="50%" text-anchor="middle" dy="4.5">Preview</textPath>
+      </text>
+
+      <!-- Sample & Hold center -->
+      <circle id="ringInner" cx="500" cy="500" r="62" fill="#c02820" onpointerdown="beginSample(event)" style="cursor:pointer; touch-action:none;" />
+      <text x="500" y="500" text-anchor="middle" dominant-baseline="middle" fill="#f7f5f1" font-size="13" font-weight="800" style="pointer-events:none;">Sample &amp; Hold</text>
+
+      <!-- Matrix cells group -->
+      <g id="matrixGroup"></g>
+
+      <!-- Save Audio outermost ring -->
+      <circle id="ringSave" cx="500" cy="500" r="465" fill="none" stroke="#c5c3be" stroke-width="22" onclick="saveAudioWav()" style="cursor:pointer;" />
+      <text id="rsLabel" fill="#1a1a18" font-size="11" font-weight="700" style="pointer-events:none;">
+        <textPath href="#arcSave" startOffset="50%" text-anchor="middle" dy="4">Save Audio</textPath>
+      </text>
+
+      <!-- Title along outer edge -->
+      <text letter-spacing="20" fill="#1a1a18" font-size="20" font-weight="800" style="pointer-events:none;">
+        <textPath href="#arcTitle" startOffset="0%" text-anchor="start">Reich's Crispy</textPath>
+      </text>
+    </svg>
+
+    <button type="button" id="btnStop" class="stop-btn" onclick="stopAudio()" disabled>Stop audio</button>
+
+    <div id="lblFileName" class="round-label mono" style="margin-top:6px;">No file</div>
+    <div id="lblPreviewTime" class="round-label mono">0.0s / 0.0s</div>
+    <div id="lblHeldDur" class="round-label mono">Hold: 1.50s</div>
+
+    <div class="scrub-row" style="width:100%; max-width:560px; margin-top:12px;">
+      <canvas id="waveCanvas" class="wave-canvas disabled" aria-label="Audio waveform. Click or drag to choose where the sample starts."></canvas>
+      <input type="range" id="previewScrubber" min="0" max="1" step="0.05" value="0" disabled oninput="seekPreview(this.value)">
+      <div class="hold-row mono">
+        <span>Hold</span>
+        <input type="range" id="holdSlider" min="0.1" max="5.0" step="0.05" value="1.5" oninput="updateHoldDuration(this.value)">
+        <span>max 5.0s</span>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+// --- 1. Steve Reich 31-Bar Additive / Subtractive Pattern ---
+const STAGE_BEATS = [
+  [1], [1, 3], [1, 3, 5], [1, 3, 5, 7], [1, 3, 5, 7, 9], [1, 3, 5, 7, 9, 11],
+  [1, 3, 5, 7, 9, 11, 13], [1, 3, 5, 7, 9, 11, 13, 15],
+  [1, 2, 3, 5, 7, 9, 11, 13, 15], [1, 2, 3, 4, 5, 7, 9, 11, 13, 15],
+  [1, 2, 3, 4, 5, 6, 7, 9, 11, 13, 15], [1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 13, 15],
+  [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15], [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15],
+  [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15], [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+];
+
+const SCORE = [];
+for (let b = 1; b <= 16; b++) {
+  const beats = STAGE_BEATS[b - 1];
+  const mask = Array(16).fill(false);
+  beats.forEach(n => mask[n - 1] = true);
+  SCORE.push({ bar: b, beats: mask, count: beats.length, phase: b === 16 ? 'Climax (16/16)' : b <= 8 ? 'Odd Addition' : 'Even Infill' });
+}
+for (let b = 17; b <= 31; b++) {
+  const stage = 16 - (b - 16);
+  const beats = STAGE_BEATS[stage - 1];
+  const mask = Array(16).fill(false);
+  beats.forEach(n => mask[n - 1] = true);
+  SCORE.push({ bar: b, beats: mask, count: beats.length, phase: b === 31 ? 'Final Beat (1/16)' : stage > 8 ? 'Reverse Even' : 'Reverse Odd' });
+}
+
+// --- 2. Web Audio Engine ---
+let audioCtx = null;
+let masterGain = null;
+let sourceBuffer = null;
+let heldBuffer = null;
+
+let isPreviewing = false;
+let previewSource = null;
+let previewStartTime = 0;
+let previewOffset = 0;
+let previewTimer = null;
+
+let isPlaying = false;
+let currentBar = 0;
+let currentRepeat = 0;
+let currentBeat = 0;
+let bpm = 116;
+let repeatsPerBar = 1;
+let playedCells = new Set();
+let holdDuration = 1.5;
+let nextTime = 0;
+let schedulerTimer = null;
+const activeSources = new Set();
+
+function getAudioContext() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    masterGain = audioCtx.createGain();
+    masterGain.gain.setValueAtTime(0.9, audioCtx.currentTime);
+    masterGain.connect(audioCtx.destination);
+  }
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+  return audioCtx;
+}
+
+// --- Step 1: Load File ---
+async function handleAudioUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const ctx = getAudioContext();
+  stopPreview();
+
+  try {
+    const ab = await file.arrayBuffer();
+    sourceBuffer = await ctx.decodeAudioData(ab);
+  } catch (err) {
+    document.getElementById('lblFileName').innerText = "Couldn't read " + file.name + ' - try a WAV, MP3 or M4A file';
+    e.target.value = '';
+    return;
+  }
+  e.target.value = ''; // lets the same file be chosen again
+
+  document.getElementById('lblFileName').innerText = file.name;
+  document.getElementById('lblPreviewTime').innerText = '0.0s / ' + sourceBuffer.duration.toFixed(1) + 's';
+  document.getElementById('previewScrubber').max = sourceBuffer.duration;
+  document.getElementById('previewScrubber').value = 0;
+
+  document.getElementById('previewScrubber').disabled = false;
+  waveformPeaks = computePeaks(sourceBuffer, WAVE_BUCKETS);
+  document.getElementById('waveCanvas').classList.remove('disabled');
+  drawWaveform();
+  var ro=document.getElementById('ringOuter'); if(ro) ro.setAttribute('stroke','#c02820');
+  var rol=document.getElementById('roLabel'); if(rol) rol.setAttribute('fill','#f7f5f1');
+
+  sliceHeldSample(0, Math.min(5.0, sourceBuffer.duration));
+}
+
+// --- Waveform ---
+let waveformPeaks = null; // Float32Array of [min, max] pairs
+let waveformScale = 1;
+let scrubbing = false;
+const WAVE_BUCKETS = 1600;
+
+function computePeaks(buf, n) {
+  const chs = [];
+  for (let c = 0; c < buf.numberOfChannels; c++) chs.push(buf.getChannelData(c));
+  const len = buf.length;
+  const per = len / n;
+  const out = new Float32Array(n * 2);
+  let maxAbs = 0.01;
+  for (let i = 0; i < n; i++) {
+    const start = Math.floor(i * per);
+    const end = Math.min(len, Math.floor((i + 1) * per));
+    const step = Math.max(1, Math.floor((end - start) / 64));
+    let mn = 1, mx = -1;
+    for (let j = start; j < end; j += step) {
+      for (let c = 0; c < chs.length; c++) {
+        const v = chs[c][j];
+        if (v < mn) mn = v;
+        if (v > mx) mx = v;
+      }
+    }
+    if (end <= start) { mn = 0; mx = 0; }
+    out[i * 2] = mn;
+    out[i * 2 + 1] = mx;
+    maxAbs = Math.max(maxAbs, Math.abs(mn), Math.abs(mx));
+  }
+  waveformScale = 1 / maxAbs; // normalise so quiet files are still readable
+  return out;
+}
+
+function drawWaveform() {
+  const canvas = document.getElementById('waveCanvas');
+  if (!canvas) return;
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  if (!w || !h) return;
+  const dpr = window.devicePixelRatio || 1;
+  if (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(h * dpr)) {
+    canvas.width = Math.round(w * dpr);
+    canvas.height = Math.round(h * dpr);
+  }
+  const g = canvas.getContext('2d');
+  g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  g.clearRect(0, 0, w, h);
+
+  if (!sourceBuffer || !waveformPeaks) {
+    g.fillStyle = '#7a7a77';
+    g.font = '12px Inter, -apple-system, sans-serif';
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.fillText('Choose audio to see its waveform', w / 2, h / 2);
+    return;
+  }
+
+  const dur = sourceBuffer.duration;
+  const scrubber = document.getElementById('previewScrubber');
+
+  // region that Sample & Hold would capture (or is capturing)
+  let regStart, regLen;
+  if (sampling) {
+    regStart = sampleStartPos;
+    regLen = Math.min(5, (performance.now() - sampleStartMs) / 1000);
+  } else {
+    regStart = parseFloat(scrubber.value) || 0;
+    regLen = holdDuration;
+  }
+  regLen = Math.max(0, Math.min(regLen, dur - regStart));
+  const x0 = (regStart / dur) * w;
+  const x1 = ((regStart + regLen) / dur) * w;
+  g.fillStyle = sampling ? 'rgba(192,40,32,0.28)' : 'rgba(192,40,32,0.14)';
+  g.fillRect(x0, 0, Math.max(1, x1 - x0), h);
+  g.fillStyle = '#c02820';
+  g.fillRect(x0, 0, 1.5, h);
+  g.fillRect(Math.max(x0, x1 - 1.5), 0, 1.5, h);
+
+  // waveform
+  const mid = h / 2;
+  const amp = mid * 0.9 * waveformScale;
+  g.fillStyle = '#7a7a77';
+  for (let x = 0; x < w; x++) {
+    const idx = Math.min(WAVE_BUCKETS - 1, Math.floor((x / w) * WAVE_BUCKETS));
+    const mn = waveformPeaks[idx * 2], mx = waveformPeaks[idx * 2 + 1];
+    const y1 = mid - mx * amp;
+    const y2 = mid - mn * amp;
+    g.fillRect(x, y1, 1, Math.max(1, y2 - y1));
+  }
+
+  // playhead
+  let pos;
+  if (scrubbing || !isPreviewing || !audioCtx) pos = parseFloat(scrubber.value) || 0;
+  else pos = (audioCtx.currentTime - previewStartTime) % dur;
+  g.fillStyle = '#1a1a18';
+  g.fillRect((pos / dur) * w - 0.5, 0, 1.5, h);
+}
+
+// click / drag on the waveform to choose where the sample starts
+(function () {
+  const canvas = document.getElementById('waveCanvas');
+  if (!canvas) return;
+  function posFromEvent(e) {
+    const r = canvas.getBoundingClientRect();
+    const f = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+    return f * sourceBuffer.duration;
+  }
+  function seekVisual(pos) {
+    const p = Math.max(0, Math.min(pos, sourceBuffer.duration));
+    document.getElementById('previewScrubber').value = p;
+    previewOffset = p;
+    document.getElementById('lblPreviewTime').innerText = p.toFixed(1) + 's / ' + sourceBuffer.duration.toFixed(1) + 's';
+    drawWaveform();
+  }
+  canvas.addEventListener('pointerdown', (e) => {
+    if (!sourceBuffer) return;
+    scrubbing = true;
+    try { canvas.setPointerCapture(e.pointerId); } catch (err) {}
+    seekVisual(posFromEvent(e));
+  });
+  canvas.addEventListener('pointermove', (e) => {
+    if (scrubbing) seekVisual(posFromEvent(e));
+  });
+  function endScrub() {
+    if (!scrubbing) return;
+    scrubbing = false;
+    if (isPreviewing) playPreview(previewOffset); // restart audio once, on release
+    else drawWaveform();
+  }
+  canvas.addEventListener('pointerup', endScrub);
+  canvas.addEventListener('pointercancel', endScrub);
+  window.addEventListener('resize', drawWaveform);
+})();
+
+// --- Step 2: Preview ---
+function setPreviewLabel(text) {
+  var tp = document.querySelector('#rpLabel textPath');
+  if (tp) tp.textContent = text;
+}
+
+function togglePreview() {
+  if (isPreviewing) pausePreview();
+  else playPreview();
+}
+
+function playPreview(fromOffset) {
+  if (!sourceBuffer) return;
+  const ctx = getAudioContext();
+  stopPreview(false);
+
+  previewSource = ctx.createBufferSource();
+  previewSource.buffer = sourceBuffer;
+  previewSource.connect(masterGain);
+
+  const offset = typeof fromOffset === 'number' ? fromOffset : previewOffset;
+  previewOffset = offset % sourceBuffer.duration;
+  previewStartTime = ctx.currentTime - previewOffset;
+
+  previewSource.start(0, previewOffset);
+  isPreviewing = true;
+  updateStopButton();
+  setPreviewLabel('Pause');
+
+  previewSource.onended = () => {
+    if (isPreviewing) stopPreview(true);
+  };
+
+  clearInterval(previewTimer);
+  previewTimer = setInterval(() => {
+    if (!isPreviewing) return;
+    if (scrubbing) return;
+    const cur = (ctx.currentTime - previewStartTime) % sourceBuffer.duration;
+    document.getElementById('lblPreviewTime').innerText = cur.toFixed(1) + 's / ' + sourceBuffer.duration.toFixed(1) + 's';
+    document.getElementById('previewScrubber').value = cur;
+    drawWaveform();
+  }, 50);
+}
+
+function pausePreview() {
+  if (!isPreviewing) return;
+  const ctx = getAudioContext();
+  previewOffset = (ctx.currentTime - previewStartTime) % sourceBuffer.duration;
+  stopPreview(false);
+  setPreviewLabel('Preview');
+}
+
+function stopPreview(resetOffset = true) {
+  if (previewSource) {
+    previewSource.onended = null;
+    try { previewSource.stop(); previewSource.disconnect(); } catch(e){}
+    previewSource = null;
+  }
+  clearInterval(previewTimer);
+  isPreviewing = false;
+  updateStopButton();
+  setPreviewLabel('Preview');
+  if (resetOffset) {
+    previewOffset = 0;
+    if (sourceBuffer) {
+      document.getElementById('lblPreviewTime').innerText = '0.0s / ' + sourceBuffer.duration.toFixed(1) + 's';
+      document.getElementById('previewScrubber').value = 0;
+    }
+    drawWaveform();
+  }
+}
+
+function seekPreview(val) {
+  const pos = parseFloat(val);
+  previewOffset = pos;
+  drawWaveform();
+  document.getElementById('lblPreviewTime').innerText = pos.toFixed(1) + 's / ' + (sourceBuffer ? sourceBuffer.duration.toFixed(1) : '0.0') + 's';
+  if (isPreviewing) {
+    playPreview(pos);
+  }
+}
+
+function sliceHeldSample(startSec, durSec) {
+  if (!sourceBuffer) return;
+  const ctx = getAudioContext();
+  const clampedDur = Math.min(5.0, Math.max(0.05, durSec));
+  const clampedStart = Math.max(0, Math.min(startSec, sourceBuffer.duration - 0.05));
+  const actualDur = Math.min(clampedDur, sourceBuffer.duration - clampedStart);
+
+  const sr = sourceBuffer.sampleRate;
+  const startSample = Math.floor(clampedStart * sr);
+  const lenSamples = Math.floor(actualDur * sr);
+
+  heldBuffer = ctx.createBuffer(sourceBuffer.numberOfChannels, lenSamples, sr);
+  for (let c = 0; c < sourceBuffer.numberOfChannels; c++) {
+    const src = sourceBuffer.getChannelData(c);
+    const dst = heldBuffer.getChannelData(c);
+    for (let i = 0; i < lenSamples; i++) dst[i] = src[startSample + i] || 0;
+  }
+
+  holdDuration = actualDur;
+  document.getElementById('lblHeldDur').innerText = 'Hold: ' + actualDur.toFixed(2) + 's';
+  drawWaveform();
+}
+
+function updateHoldDuration(val) {
+  holdDuration = Math.min(5.0, parseFloat(val));
+  const curPos = parseFloat(document.getElementById('previewScrubber').value) || previewOffset || 0;
+  sliceHeldSample(curPos, holdDuration);
+}
+
+// Sample & Hold: pressing starts capturing from the playhead, releasing autoplays the captured loop
+let sampling = false;
+let sampleStartPos = 0;
+let sampleStartMs = 0;
+let sampleTicker = null;
+let sampleMaxTimer = null;
+
+function beginSample(e) {
+  if (e && e.preventDefault) e.preventDefault();
+  if (!sourceBuffer || sampling) return;
+  const ctx = getAudioContext();
+  sampling = true;
+
+  // capture from wherever the playhead is right now
+  if (isPreviewing) {
+    sampleStartPos = (ctx.currentTime - previewStartTime) % sourceBuffer.duration;
+  } else {
+    sampleStartPos = parseFloat(document.getElementById('previewScrubber').value) || previewOffset || 0;
+    if (sampleStartPos >= sourceBuffer.duration - 0.05) sampleStartPos = 0;
+  }
+
+  // silence any running loop, and let the source play while the button is held
+  stopMatrixAtEnd();
+  silenceAll();
+  if (!isPreviewing) playPreview(sampleStartPos);
+
+  sampleStartMs = performance.now();
+  var ri = document.getElementById('ringInner'); if (ri) ri.setAttribute('fill', '#8e2019');
+  sampleTicker = setInterval(() => {
+    const held = Math.min(5, (performance.now() - sampleStartMs) / 1000);
+    document.getElementById('lblHeldDur').innerText = 'Holding: ' + held.toFixed(2) + 's';
+    drawWaveform();
+  }, 50);
+  sampleMaxTimer = setTimeout(releaseSample, 5000); // 5s is the maximum hold
+}
+
+function releaseSample() {
+  if (!sampling) return;
+  sampling = false;
+  clearInterval(sampleTicker);
+  clearTimeout(sampleMaxTimer);
+  var ri = document.getElementById('ringInner'); if (ri) ri.setAttribute('fill', '#c02820');
+
+  // a quick tap uses the Hold slider length; a longer press uses how long it was held
+  const held = (performance.now() - sampleStartMs) / 1000;
+  const dur = held >= 0.15 ? Math.min(5, held) : holdDuration;
+  sliceHeldSample(sampleStartPos, dur);
+  document.getElementById('holdSlider').value = holdDuration;
+
+  stopPreview(false);
+  playMatrix();
+}
+window.addEventListener('pointerup', releaseSample);
+window.addEventListener('pointercancel', releaseSample);
+
+// --- Matrix Sequencer (auto-plays on sample release, plays once and stops at Bar 31) ---
+function playMatrix() {
+  if (!heldBuffer && sourceBuffer) {
+    sliceHeldSample(0, Math.min(5.0, sourceBuffer.duration));
+  }
+  if (!heldBuffer) return;
+
+  stopScheduler();
+  stopPreview(false);
+  const ctx = getAudioContext();
+  playedCells.clear();
+  isPlaying = true;
+  currentBar = 0;
+  currentRepeat = 0;
+  currentBeat = 0;
+
+  nextTime = ctx.currentTime + 0.05;
+  startScheduler();
+  updateUI();
+}
+
+function updateStopButton() {
+  var b = document.getElementById('btnStop');
+  if (b) b.disabled = !(isPlaying || isPreviewing);
+}
+
+// Fades out and cuts notes that are already scheduled or sounding (not ones scheduled afterwards)
+function silenceAll() {
+  if (!audioCtx || !masterGain) return;
+  const stale = Array.from(activeSources);
+  activeSources.clear();
+  const now = audioCtx.currentTime;
+  masterGain.gain.cancelScheduledValues(now);
+  masterGain.gain.setValueAtTime(masterGain.gain.value, now);
+  masterGain.gain.linearRampToValueAtTime(0, now + 0.03); // short fade avoids a click
+  setTimeout(() => {
+    stale.forEach(src => { try { src.stop(); src.disconnect(); } catch (e) {} });
+    const t = audioCtx.currentTime;
+    masterGain.gain.cancelScheduledValues(t);
+    masterGain.gain.setValueAtTime(0.9, t);
+  }, 50);
+}
+
+// Stops the loop and any preview
+function stopAudio() {
+  stopMatrixAtEnd();
+  stopPreview(true);
+  silenceAll();
+  updateStopButton();
+}
+
+function stopMatrixAtEnd() {
+  playedCells.clear();
+  isPlaying = false;
+  stopScheduler();
+  currentBar = 0;
+  currentRepeat = 0;
+  currentBeat = 0;
+  updateUI();
+}
+
+function jumpBar(b) {
+  currentBar = Math.max(0, Math.min(30, b));
+  currentRepeat = 0;
+  currentBeat = 0;
+  updateUI();
+}
+
+function startScheduler() {
+  stopScheduler();
+
+  function tick() {
+    if (!isPlaying) return;
+    const ctx = getAudioContext();
+    while (isPlaying && nextTime < ctx.currentTime + 0.12) {
+      scheduleBeat(currentBar, currentBeat, nextTime);
+      advance();
+    }
+    if (isPlaying) {
+      schedulerTimer = setTimeout(tick, 25);
+    }
+  }
+
+  tick();
+}
+
+function stopScheduler() {
+  if (schedulerTimer !== null) {
+    clearTimeout(schedulerTimer);
+    schedulerTimer = null;
+  }
+}
+
+function advance() {
+  const stepDur = 60 / bpm / 4;
+  nextTime += stepDur;
+
+  currentBeat++;
+  if (currentBeat >= 16) {
+    currentBeat = 0;
+    currentRepeat++;
+    if (currentRepeat >= repeatsPerBar) {
+      currentRepeat = 0;
+      currentBar++;
+
+      if (currentBar >= 31) {
+        stopMatrixAtEnd();
+        return;
+      }
+    }
+  }
+  updateUI();
+}
+
+function scheduleBeat(b, beatIdx, time) {
+  const pattern = SCORE[b];
+  if (!pattern || !heldBuffer) return;
+  playedCells.add(b + '-' + beatIdx); // fills the cell whether or not it triggers a note
+  if (!pattern.beats[beatIdx]) return;
+
+  const ctx = getAudioContext();
+  const src = ctx.createBufferSource();
+  src.buffer = heldBuffer;
+
+  const gain = ctx.createGain();
+  const dur = heldBuffer.duration;
+  gain.gain.setValueAtTime(0.001, time);
+  gain.gain.linearRampToValueAtTime(1.0, time + 0.003);
+  gain.gain.setValueAtTime(1.0, time + dur - 0.02);
+  gain.gain.linearRampToValueAtTime(0.001, time + dur);
+
+  src.connect(gain);
+  gain.connect(masterGain);
+  activeSources.add(src);
+  src.onended = () => activeSources.delete(src);
+  src.start(time);
+  src.stop(time + dur + 0.05);
+}
+
+function updateBpm(val) {
+  bpm = parseInt(val, 10);
+  document.getElementById('lblBpm').innerText = bpm + ' BPM';
+}
+
+function setRepeats(n) {
+  repeatsPerBar = n;
+  document.getElementById('lblTotalRep').innerText = n;
+  document.getElementById('lblBarsTotal').innerText = (31 * n) + ' Bars Total';
+  document.querySelectorAll('#rep1, #rep2, #rep4').forEach(b => b.classList.remove('btn-active'));
+  document.getElementById('rep' + n).classList.add('btn-active');
+}
+
+function renderMatrix() {
+  const group = document.getElementById('matrixGroup');
+  if (!group) return;
+  group.innerHTML = '';
+  const cx = 500, cy = 500;
+  const innerR = 160, outerR = 440;
+  const rings = 31, steps = 16;
+  const ringStep = (outerR - innerR) / rings;
+  for (let bar = 0; bar < rings; bar++) {
+    const rIn = innerR + bar * ringStep;
+    const rOut = innerR + (bar + 1) * ringStep;
+    for (let beat = 0; beat < steps; beat++) {
+      const a0 = (beat / steps) * Math.PI * 2 - Math.PI / 2;
+      const a1 = ((beat + 1) / steps) * Math.PI * 2 - Math.PI / 2;
+      const x1o = cx + rOut * Math.cos(a0), y1o = cy + rOut * Math.sin(a0);
+      const x2o = cx + rOut * Math.cos(a1), y2o = cy + rOut * Math.sin(a1);
+      const x1i = cx + rIn * Math.cos(a0), y1i = cy + rIn * Math.sin(a0);
+      const x2i = cx + rIn * Math.cos(a1), y2i = cy + rIn * Math.sin(a1);
+      const largeArc = (a1 - a0) > Math.PI ? 1 : 0;
+      const d = 'M ' + x1o + ' ' + y1o + ' A ' + rOut + ' ' + rOut + ' 0 ' + largeArc + ' 1 ' + x2o + ' ' + y2o +
+        ' L ' + x2i + ' ' + y2i + ' A ' + rIn + ' ' + rIn + ' 0 ' + largeArc + ' 0 ' + x1i + ' ' + y1i + ' Z';
+      const pathEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      pathEl.setAttribute('d', d);
+      pathEl.setAttribute('class', 'cell' + (SCORE[bar].beats[beat] ? ' trigger' : ''));
+      pathEl.setAttribute('data-bar', bar);
+      pathEl.setAttribute('data-beat', beat);
+      pathEl.addEventListener('click', (function(b){ return function(){ jumpBar(b); }; })(bar));
+      group.appendChild(pathEl);
+    }
+  }
+}
+function updateUI() {
+  updateStopButton();
+  var lb=document.getElementById('lblBar'); if(lb) lb.innerText = (currentBar + 1).toString().padStart(2, '0');
+  var lr=document.getElementById('lblRep'); if(lr) lr.innerText = currentRepeat + 1;
+  var lbt=document.getElementById('lblBeat'); if(lbt) lbt.innerText = (currentBeat + 1).toString().padStart(2, '0');
+
+  const cells = document.querySelectorAll('#mainSvg #matrixGroup path.cell');
+  cells.forEach((cell) => {
+    const b = +cell.getAttribute('data-bar');
+    const bt = +cell.getAttribute('data-beat');
+    cell.classList.toggle('bar-active', b === currentBar);
+    cell.classList.toggle('played', playedCells.has(b + '-' + bt) && !(isPlaying && b === currentBar && bt === currentBeat));
+    cell.classList.toggle('active', isPlaying && b === currentBar && bt === currentBeat);
+  });
+}
+
+// --- Save Audio (.WAV) ---
+
+async function saveAudioWav() {
+  if (!heldBuffer) return;
+  var rsTp=document.querySelector('#rsLabel textPath'); if(rsTp) rsTp.textContent='Rendering...';
+
+  const sr = 44100;
+  const stepDur = 60 / bpm / 4;
+  const barDur = stepDur * 16;
+  const totalBars = 31 * repeatsPerBar;
+  const totalDur = totalBars * barDur + heldBuffer.duration + 0.5;
+
+  const offlineCtx = new OfflineAudioContext(heldBuffer.numberOfChannels, Math.floor(totalDur * sr), sr);
+  let time = 0.05;
+
+  for (let b = 0; b < 31; b++) {
+    const p = SCORE[b];
+    for (let rep = 0; rep < repeatsPerBar; rep++) {
+      for (let beat = 0; beat < 16; beat++) {
+        if (p.beats[beat]) {
+          const src = offlineCtx.createBufferSource();
+          src.buffer = heldBuffer;
+          const gain = offlineCtx.createGain();
+          const dur = heldBuffer.duration;
+          gain.gain.setValueAtTime(0.001, time);
+          gain.gain.linearRampToValueAtTime(1.0, time + 0.003);
+          gain.gain.setValueAtTime(1.0, time + dur - 0.02);
+          gain.gain.linearRampToValueAtTime(0.001, time + dur);
+          src.connect(gain);
+          gain.connect(offlineCtx.destination);
+          src.start(time);
+          src.stop(time + dur + 0.05);
+        }
+        time += stepDur;
+      }
+    }
+  }
+
+  let rendered;
+  try {
+    rendered = await offlineCtx.startRendering();
+  } catch (err) {
+    if (rsTp) rsTp.textContent = 'Save failed';
+    setTimeout(() => { var t=document.querySelector('#rsLabel textPath'); if(t) t.textContent='Save Audio'; }, 3000);
+    return;
+  }
+  const wavBlob = audioBufferToWav(rendered);
+
+  const url = URL.createObjectURL(wavBlob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'reich-loop-performance.wav';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  if(rsTp) rsTp.textContent='Saved'; setTimeout(() => { var t=document.querySelector('#rsLabel textPath'); if(t) t.textContent='Save Audio'; }, 3000);
+}
+
+function audioBufferToWav(buf) {
+  const numCh = buf.numberOfChannels;
+  const sr = buf.sampleRate;
+  const len = buf.length * numCh * 2;
+  const ab = new ArrayBuffer(44 + len);
+  const v = new DataView(ab);
+
+  function writeStr(offset, str) {
+    for (let i = 0; i < str.length; i++) v.setUint8(offset + i, str.charCodeAt(i));
+  }
+
+  writeStr(0, 'RIFF');
+  v.setUint32(4, 36 + len, true);
+  writeStr(8, 'WAVE');
+  writeStr(12, 'fmt ');
+  v.setUint32(16, 16, true);
+  v.setUint16(20, 1, true); // PCM
+  v.setUint16(22, numCh, true);
+  v.setUint32(24, sr, true);
+  v.setUint32(28, sr * numCh * 2, true);
+  v.setUint16(32, numCh * 2, true);
+  v.setUint16(34, 16, true);
+  writeStr(36, 'data');
+  v.setUint32(40, len, true);
+
+  let offset = 44;
+  const chData = [];
+  for (let c = 0; c < numCh; c++) chData.push(buf.getChannelData(c));
+
+  for (let i = 0; i < buf.length; i++) {
+    for (let c = 0; c < numCh; c++) {
+      let s = Math.max(-1, Math.min(1, chData[c][i]));
+      v.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+      offset += 2;
+    }
+  }
+  return new Blob([ab], { type: 'audio/wav' });
+}
+
+window.onload = () => {
+  drawWaveform();
+  renderMatrix();
+  updateUI();
+};
+</script>
+</body>
+</html>
